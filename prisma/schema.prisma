@@ -1,0 +1,66 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id               Int       @id @default(autoincrement())
+  email            String    @unique
+  name             String?
+  password         String?
+  role             Role      @default(USER)
+  tokenVersion     Int       @default(0)
+  stripeCustomerId String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  dataPoints       DataPoint[]
+  subscriptions    Subscription[]
+}
+
+model Plan {
+  id            Int      @id @default(autoincrement())
+  name          String
+  stripePriceId String
+  priceCents    Int
+  interval      String
+  createdAt     DateTime @default(now())
+  subscription Subscription[]
+}
+
+model Subscription {
+  id                   Int      @id @default(autoincrement())
+  stripeSubscriptionId String   @unique
+  user                 User     @relation(fields: [userId], references: [id])
+  userId               Int
+  plan                 Plan?    @relation(fields: [planId], references: [id])
+  planId               Int?
+  status               String
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model DataPoint {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  metric    String
+  value     Float
+  timestamp DateTime @default(now())
+}
